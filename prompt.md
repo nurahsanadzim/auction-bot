@@ -11,3 +11,21 @@ i want to create an auction app with specs:
 10. user can revoke their auctions per item 
 11. database stored as local csv file in project directory, so we the crud operations will modify this csv
 12. for auctions, in database we can list every item auctions with current high price offering
+13. 
+
+
+## bot specs
+/list-big #list big items and its current peak price (show winner as anonymous)
+/list-normal #list normal items and its current peak price (show winner as anonymous)
+/my-auctions #list my (user) current prices on items, also show if my prices wins or not currently 
+/participate #join the auctions using my telegram id (user)
+/withdraw #opt out from auctions, all my (user) prices will be erased
+/set-price <item id>
+
+## items
+every item has this attributes 
+- id
+- name
+- starting_price
+- detail
+- link (online shop link)
