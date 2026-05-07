@@ -20,7 +20,7 @@ i want to create an auction app with specs:
 /my-auctions #list my (user) current prices on items, also show if my prices wins or not currently 
 /participate #join the auctions using my telegram id (user)
 /withdraw #opt out from auctions, all my (user) prices will be erased
-/set-price <item id>
+/bid <item id> 
 
 ## items
 every item has this attributes 
