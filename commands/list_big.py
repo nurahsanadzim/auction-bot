@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from config import GROUP_ID
-from core.csv_store import load_items, load_bids
+from core.csv_store import load_items, load_bids, get_user
 from core.auction_logic import get_top_bid
 
 
@@ -24,7 +24,12 @@ async def list_big(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     for item in items:
         top = get_top_bid(item.id, bids)
-        top_str = f"{_fmt(top.amount)} (Anonymous)" if top else "No bids yet"
+        if top:
+            top_user = get_user(top.telegram_id)
+            top_name = f"@{top_user.username}" if top_user else "Unknown"
+            top_str = f"{_fmt(top.amount)} by {top_name}"
+        else:
+            top_str = "No bids yet"
         lines.append(f"[{item.id}] {item.name} — Current top: {top_str}")
         lines.append(f"  Starting price: {_fmt(item.starting_price)}")
         if item.detail:

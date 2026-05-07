@@ -34,7 +34,11 @@ async def my_auctions(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     lines = ["Your Auctions:\n"]
     for item in items:
-        my_bid = next((b for b in my_active_bids if b.item_id == item.id), None)
+        my_bid = max(
+            (b for b in my_active_bids if b.item_id == item.id),
+            key=lambda b: b.amount,
+            default=None,
+        )
         if not my_bid:
             continue
 
