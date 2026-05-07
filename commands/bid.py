@@ -32,8 +32,11 @@ async def bid(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     item = get_item(item_id)
-    if not item or not item.active:
+    if not item:
         await update.message.reply_text("Item ID not found.")
+        return
+    if not item.active:
+        await update.message.reply_text(f"Bidding for [{item_id}] {item.name} has closed.")
         return
 
     if amount < item.starting_price:

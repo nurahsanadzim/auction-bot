@@ -14,28 +14,36 @@ async def list_normal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.id != GROUP_ID:
         return
 
-    items = [i for i in load_items() if i.type == "normal" and i.active]
+    items = [i for i in load_items() if i.type == "normal"]
     if not items:
-        await update.message.reply_text("No active normal auction items.")
+        await update.message.reply_text("No normal auction items.")
         return
 
     bids = load_bids()
     lines = []
 
     for item in items:
-        top = get_top_bid(item.id, bids)
-        if top:
-            top_user = get_user(top.telegram_id)
-            top_name = f"@{top_user.username}" if top_user else "Unknown"
-            top_str = f"{_fmt(top.amount)} by {top_name}"
-        else:
-            top_str = "No bids yet"
-        lines.append(f"[{item.id}] {item.name} — Current top: {top_str}")
+        status = "CLOSED" if not item.active else "OPEN"
+        lines.append(f"[{item.id}] {item.name} [{status}]")
         lines.append(f"  Starting price: {_fmt(item.starting_price)}")
+
+        if item.timer:
+            timer_str = item.timer.astimezone().strftime("%Y-%m-%d %H:%M %Z")
+            label = "Closed at" if not item.active else "Closes at"
+            lines.append(f"  {label}: {timer_str}")
+
         if item.detail:
             lines.append(f"  {item.detail}")
         if item.link:
             lines.append(f"  {item.link}")
+
+        top = get_top_bid(item.id, bids)
+        if top:
+            top_user = get_user(top.telegram_id)
+            top_name = f"@{top_user.username}" if top_user else "Unknown"
+            lines.append(f"  Current top: {_fmt(top.amount)} by {top_name}")
+        else:
+            lines.append("  Current top: No bids yet")
 
         item_bids = sorted(
             [b for b in bids if b.item_id == item.id and not b.revoked],
@@ -44,7 +52,7 @@ async def list_normal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         if item_bids:
             history = ", ".join(_fmt(b.amount) for b in item_bids)
-            lines.append(f"  Bid history: {history} (all Anonymous)")
+            lines.append(f"  Bid history: {history}")
 
         lines.append("")
 

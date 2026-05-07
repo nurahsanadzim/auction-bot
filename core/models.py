@@ -19,6 +19,7 @@ class Item:
     detail: str
     link: str
     active: bool
+    timer: datetime | None  # UTC datetime; None = no auto-close
 
 
 @dataclass

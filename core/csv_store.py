@@ -7,7 +7,7 @@ from config import DATA_DIR, USERS_CSV, ITEMS_CSV, BIDS_CSV
 from core.models import User, Item, Bid
 
 USERS_HEADERS = ["telegram_id", "username", "joined_at", "active"]
-ITEMS_HEADERS = ["id", "name", "type", "starting_price", "detail", "link", "active"]
+ITEMS_HEADERS = ["id", "name", "type", "starting_price", "detail", "link", "active", "timer"]
 BIDS_HEADERS  = ["bid_id", "item_id", "telegram_id", "amount", "timestamp", "revoked"]
 
 
@@ -72,6 +72,7 @@ def upsert_user(user: User):
 # ── Items ──────────────────────────────────────────────────────────────────
 
 def _parse_item(row: dict) -> Item:
+    raw_timer = row.get("timer", "")
     return Item(
         id=row["id"],
         name=row["name"],
@@ -80,12 +81,32 @@ def _parse_item(row: dict) -> Item:
         detail=row["detail"],
         link=row["link"],
         active=row["active"] == "True",
+        timer=datetime.fromisoformat(raw_timer) if raw_timer else None,
     )
 
 
 def load_items() -> list[Item]:
     with open(ITEMS_CSV, newline="") as f:
         return [_parse_item(r) for r in csv.DictReader(f)]
+
+
+def save_items(items: list[Item]):
+    lock = FileLock(str(ITEMS_CSV) + ".lock")
+    with lock:
+        with open(ITEMS_CSV, "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=ITEMS_HEADERS)
+            w.writeheader()
+            for i in items:
+                w.writerow({
+                    "id":            i.id,
+                    "name":          i.name,
+                    "type":          i.type,
+                    "starting_price": i.starting_price,
+                    "detail":        i.detail,
+                    "link":          i.link,
+                    "active":        i.active,
+                    "timer":         i.timer.isoformat() if i.timer else "",
+                })
 
 
 def get_item(item_id: str) -> Item | None:
