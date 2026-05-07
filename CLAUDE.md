@@ -237,17 +237,20 @@ All errors reply in the same chat thread — no silent failures.
 - Keep business logic out of command handlers — handlers call `core/` functions only
 - CSV operations in `core/csv_store.py` should be the **only** place that touches files
 - On first run, `bot.py` must auto-create `data/` dir and empty CSVs with headers if not present
-- Run with: `python bot.py`
+- Run with: `venv/bin/python bot.py` (or `python bot.py` with venv activated)
 - Env vars loaded via `python-dotenv` from `.env`
+- Virtual environment: `venv/` (gitignored)
 
 ### First-time local setup (WSL)
 
 ```bash
 git clone git@github.com:<you>/auction-bot.git ~/auction-bot
 cd ~/auction-bot
-cp .env.example .env        # fill in BOT_TOKEN and GROUP_ID
+python3 -m venv venv          # create virtual environment
+source venv/bin/activate      # activate venv
+cp .env.example .env          # fill in BOT_TOKEN and GROUP_ID
 pip install -r requirements.txt
-python bot.py               # data/ dir auto-created on first run
+python bot.py                 # data/ dir auto-created on first run
 ```
 
 ---
