@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 
-HELP_TEXT = """
+HELP_TEXT = r"""
 *Auction Bot Commands*
 
 /participate — Join the auction
