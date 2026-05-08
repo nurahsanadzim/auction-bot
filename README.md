@@ -70,7 +70,7 @@ AUCTION_END=2026-05-15T23:59:59+07:00
 ```
 [b1] Monitor Palsu  — Starting: Rp200.000
 [b2] Meja           — Starting: Rp100.000
-[n1] Kutang         — Starting: Rp10.000
+[n1] Kaos           — Starting: Rp10.000
 ```
 
 ### During the auction
