@@ -1,12 +1,16 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from config import GROUP_ID
+from config import GROUP_ID, auction_is_open
 from core.csv_store import get_user, get_item, load_bids, save_bids
 
 
 async def revoke(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.id != GROUP_ID:
+        return
+
+    if not auction_is_open():
+        await update.message.reply_text("Auction is not currently open. Bids cannot be revoked.")
         return
 
     user_id = update.effective_user.id

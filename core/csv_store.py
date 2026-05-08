@@ -7,7 +7,7 @@ from config import DATA_DIR, USERS_CSV, ITEMS_CSV, BIDS_CSV
 from core.models import User, Item, Bid
 
 USERS_HEADERS = ["telegram_id", "username", "joined_at", "active"]
-ITEMS_HEADERS = ["id", "name", "type", "starting_price", "detail", "link", "active", "timer"]
+ITEMS_HEADERS = ["id", "name", "starting_price", "detail", "link", "active"]
 BIDS_HEADERS  = ["bid_id", "item_id", "telegram_id", "amount", "timestamp", "revoked"]
 
 
@@ -72,16 +72,13 @@ def upsert_user(user: User):
 # ── Items ──────────────────────────────────────────────────────────────────
 
 def _parse_item(row: dict) -> Item:
-    raw_timer = row.get("timer", "")
     return Item(
         id=row["id"],
         name=row["name"],
-        type=row["type"],
         starting_price=int(row["starting_price"]),
         detail=row["detail"],
         link=row["link"],
         active=row["active"] == "True",
-        timer=datetime.fromisoformat(raw_timer) if raw_timer else None,
     )
 
 
@@ -100,12 +97,10 @@ def save_items(items: list[Item]):
                 w.writerow({
                     "id":            i.id,
                     "name":          i.name,
-                    "type":          i.type,
                     "starting_price": i.starting_price,
                     "detail":        i.detail,
                     "link":          i.link,
                     "active":        i.active,
-                    "timer":         i.timer.isoformat() if i.timer else "",
                 })
 
 

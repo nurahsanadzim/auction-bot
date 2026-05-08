@@ -14,12 +14,10 @@ class User:
 class Item:
     id: str
     name: str
-    type: str  # 'big' or 'normal'
     starting_price: int
     detail: str
     link: str
     active: bool
-    timer: datetime | None  # UTC datetime; None = no auto-close
 
 
 @dataclass

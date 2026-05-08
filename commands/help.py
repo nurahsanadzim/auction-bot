@@ -6,11 +6,11 @@ HELP_TEXT = """
 
 /participate — Join the auction
 /withdraw — Leave and revoke all your bids
-/list\_big — View all big auction items
-/list\_normal — View all normal auction items
-/my\_auctions — View your bids and win status
+/list\_items — View all auction items and leading bids
+/my\_auctions — View your bids and status
 /bid <item\_id> <amount> — Place a bid on an item
 /revoke <item\_id> — Revoke your bid on an item
+/winners — Show winners after auction ends
 /help — Show this message
 """.strip()
 
