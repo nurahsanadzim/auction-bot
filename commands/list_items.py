@@ -1,9 +1,13 @@
+from datetime import timezone, timedelta
+
 from telegram import Update
 from telegram.ext import ContextTypes
 
 from config import GROUP_ID, auction_is_open, auction_has_ended, AUCTION_END
 from core.csv_store import load_items, load_bids, get_user
 from core.auction_logic import get_leading_bid
+
+WIB = timezone(timedelta(hours=7))
 
 
 def _fmt(amount: int) -> str:
@@ -24,7 +28,7 @@ async def list_items(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if auction_has_ended():
         status_line = "Auction has ended. Use /winners to see results."
     elif auction_is_open():
-        end_str = AUCTION_END.astimezone().strftime("%Y-%m-%d %H:%M %Z") if AUCTION_END else "TBD"
+        end_str = AUCTION_END.astimezone(WIB).strftime("%Y-%m-%d %H:%M WIB") if AUCTION_END else "TBD"
         status_line = f"Auction is OPEN — closes at {end_str}"
     else:
         status_line = "Auction has not started yet."
