@@ -7,7 +7,6 @@ set -a
 source "$SCRIPT_DIR/.env"
 set +a
 
-BACKUP_GROUP=""
 DATA_DIR="$SCRIPT_DIR/data"
 BACKUP_DIR="$DATA_DIR/backups"
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M")
@@ -27,7 +26,7 @@ fi
 # Send to Telegram backup group
 RESPONSE=$(curl -s -X POST \
     "https://api.telegram.org/bot$BOT_TOKEN/sendDocument" \
-    -F "chat_id=$BACKUP_GROUP" \
+    -F "chat_id=$BACKUP_GROUP_ID" \
     -F "document=@$BACKUP_FILE" \
     -F "caption=Backup $TIMESTAMP")
 
