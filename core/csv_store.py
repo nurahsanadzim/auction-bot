@@ -30,7 +30,7 @@ def _parse_user(row: dict) -> User:
         telegram_id=int(row["telegram_id"]),
         username=row["username"],
         joined_at=datetime.fromisoformat(row["joined_at"]),
-        active=row["active"] == "True",
+        active=row["active"].strip().lower() == "true",
     )
 
 
@@ -78,7 +78,7 @@ def _parse_item(row: dict) -> Item:
         starting_price=int(row["starting_price"]),
         detail=row["detail"],
         link=row["link"],
-        active=row["active"] == "True",
+        active=row["active"].strip().lower() == "true",
     )
 
 
@@ -117,7 +117,7 @@ def _parse_bid(row: dict) -> Bid:
         telegram_id=int(row["telegram_id"]),
         amount=int(row["amount"]),
         timestamp=datetime.fromisoformat(row["timestamp"]),
-        revoked=row["revoked"] == "True",
+        revoked=row["revoked"].strip().lower() == "true",
     )
 
 
