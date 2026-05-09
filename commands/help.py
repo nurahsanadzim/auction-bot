@@ -11,6 +11,7 @@ HELP_TEXT = r"""
 /bid <item\_id> <amount> — Place a bid on an item
 /revoke <item\_id> — Revoke your bid on an item
 /winners — Show winners after auction ends
+/rules — Show auction rules
 /help — Show this message
 """.strip()
 

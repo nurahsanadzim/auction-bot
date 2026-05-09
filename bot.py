@@ -12,6 +12,7 @@ from commands.bid import bid
 from commands.revoke import revoke
 from commands.winners import winners
 from commands.help import help_command
+from commands.rules import rules
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -32,6 +33,7 @@ def main():
     app.add_handler(CommandHandler("revoke", revoke))
     app.add_handler(CommandHandler("winners", winners))
     app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("rules", rules))
 
     app.run_polling()
 
