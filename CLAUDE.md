@@ -9,6 +9,7 @@ A Python-based Telegram bot for managing auctions within a group chat. Users opt
 ## Environment
 
 - **Local dev**: WSL (Ubuntu) — project lives at `~/auction-bot/`
+- **Production**: DigitalOcean Droplet (Ubuntu), deployed as a systemd service, user `deploy`
 - **Version control**: GitHub — push/pull via `git` in WSL
 - **Data directory**: `auction-bot/data/` is **gitignored** — never committed (contains user PII and bid data)
 
@@ -35,13 +36,14 @@ Seed/sample data for local testing should live in `data/` only — never commit 
 - **Language**: Python 3.10+
 - **Framework**: `python-telegram-bot` (v20+, async)
 - **Storage**: Local CSV files (no external DB)
-- **Deployment**: Single process, runs in foreground or as systemd service
+- **Deployment**: Single process, runs as systemd service on a DigitalOcean Droplet
 
 ### File Structure
 
 ```
 auction-bot/
 ├── bot.py                  # Entry point, registers handlers
+├── backup.sh               # Daily backup script — tarballs CSVs and sends to Telegram
 ├── commands/
 │   ├── participate.py
 │   ├── withdraw.py
@@ -54,7 +56,8 @@ auction-bot/
 ├── data/                   # ⚠ gitignored — local only
 │   ├── users.csv           # Registered participants
 │   ├── items.csv           # Auction items
-│   └── bids.csv            # All bid records
+│   ├── bids.csv            # All bid records
+│   └── backups/            # Tarballs created by backup.sh
 ├── core/
 │   ├── csv_store.py        # CRUD abstraction for CSV
 │   ├── auction_logic.py    # Auction resolution logic
@@ -84,7 +87,7 @@ auction-bot/
 
 | Column        | Type | Notes                        |
 |---------------|------|------------------------------|
-| id            | str  | e.g. `b1`, `n1`, `item1`    |
+| id            | str  | e.g. `1`, `2`, `3`          |
 | name          | str  |                              |
 | starting_price| int  | IDR, no decimals             |
 | detail        | str  |                              |
@@ -122,6 +125,7 @@ auction-bot/
 
 - Shows all active auction items (admin `active=True`)
 - Displays auction window status (open/closed/not started)
+- Close time is always displayed in WIB (UTC+7) regardless of server timezone
 - Per item: starting price, current leading bid with username, full bid history (amounts only)
 - Visible to all group members
 
@@ -161,7 +165,7 @@ Controlled globally via environment variables:
 
 ```
 AUCTION_START=2026-05-08T00:00:00+07:00
-AUCTION_END=2026-05-15T23:59:59+07:00
+AUCTION_END=2026-05-20T23:59:59+07:00
 ```
 
 - Before `AUCTION_START`: bidding not open
@@ -197,6 +201,7 @@ This ensures no mid-auction lock-outs or cascading state changes — standings a
 - All writes: append-only for bids; full-rewrite for users/items
 - Use `filelock` to prevent race conditions on concurrent updates
 - Never delete rows — use soft deletes (`revoked`, `active` flags)
+- Boolean values (`active`, `revoked`) are parsed case-insensitively — `TRUE`, `True`, and `true` all work
 
 ---
 
@@ -221,10 +226,34 @@ Helper functions: `auction_is_open()`, `auction_has_ended()`
 BOT_TOKEN=
 GROUP_ID=
 AUCTION_START=2026-05-08T00:00:00+07:00
-AUCTION_END=2026-05-15T23:59:59+07:00
+AUCTION_END=2026-05-20T23:59:59+07:00
+BACKUP_GROUP_ID=
 ```
 
 Copy to `.env` and fill in values before running. Never commit `.env`.
+
+---
+
+## Backup (`backup.sh`)
+
+A bash script that:
+1. Tarballs all CSVs in `data/` into `data/backups/backup_YYYY-MM-DD_HH-MM.tar.gz`
+2. Sends the tarball to the Telegram backup group (`BACKUP_GROUP_ID` from `.env`)
+3. Logs the result to stdout (redirect to `data/backup.log` in cron)
+
+Make executable before first use:
+```bash
+chmod +x backup.sh
+```
+
+Cron entry (23:50 WIB — adjust hour for server timezone):
+```
+# Server in UTC:
+50 16 * * * /home/deploy/auction-bot/backup.sh >> /home/deploy/auction-bot/data/backup.log 2>&1
+
+# Server in Asia/Jakarta (WIB):
+50 23 * * * /home/deploy/auction-bot/backup.sh >> /home/deploy/auction-bot/data/backup.log 2>&1
+```
 
 ---
 
@@ -253,6 +282,45 @@ All errors reply in the same chat thread — no silent failures.
 
 ---
 
+## Deployment
+
+### Production server
+
+- DigitalOcean Droplet (Ubuntu), user `deploy`
+- Bot runs as a systemd service: `auction-bot.service`
+- Project lives at `/home/deploy/auction-bot/`
+
+```ini
+# /etc/systemd/system/auction-bot.service
+[Unit]
+Description=Auction Bot
+After=network.target
+
+[Service]
+User=deploy
+WorkingDirectory=/home/deploy/auction-bot
+ExecStart=/home/deploy/auction-bot/venv/bin/python bot.py
+Restart=always
+RestartSec=5
+EnvironmentFile=/home/deploy/auction-bot/.env
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### Updating after a push
+
+```bash
+cd ~/auction-bot && git pull && sudo systemctl restart auction-bot
+```
+
+If git pull fails after a force push (diverged history):
+```bash
+git fetch origin && git reset --hard origin/main && sudo systemctl restart auction-bot
+```
+
+---
+
 ## Development Notes
 
 - Use `async`/`await` throughout — python-telegram-bot v20 is fully async
@@ -267,12 +335,13 @@ All errors reply in the same chat thread — no silent failures.
 ### First-time local setup (WSL)
 
 ```bash
-git clone git@github.com:<you>/auction-bot.git ~/auction-bot
+git clone git@github.com:nurahsanadzim/auction-bot.git ~/auction-bot
 cd ~/auction-bot
-python3 -m venv venv          # create virtual environment
-source venv/bin/activate      # activate venv
+python3 -m venv venv
+source venv/bin/activate
 cp .env.example .env          # fill in all values
 pip install -r requirements.txt
+chmod +x backup.sh
 python bot.py                 # data/ dir auto-created on first run
 ```
 
@@ -282,8 +351,10 @@ Edit `data/items.csv` directly. Schema:
 
 ```
 id,name,starting_price,detail,link,active
-b1,Monitor Palsu,200000,Good condition,http://tokped.com,True
+1,Monitor,200000,Good condition,https://tokopedia.com/...,TRUE
 ```
+
+Boolean values (`TRUE`/`FALSE`, `True`/`False`, `true`/`false`) are all accepted.
 
 ---
 
