@@ -3,7 +3,7 @@ from datetime import timezone, timedelta
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from config import GROUP_ID, auction_is_open, auction_has_ended, AUCTION_END
+from config import GROUP_ID, auction_is_open, auction_has_ended, AUCTION_START, AUCTION_END
 from core.csv_store import load_items, load_bids, get_user
 from core.auction_logic import get_leading_bid
 
@@ -31,7 +31,8 @@ async def list_items(update: Update, context: ContextTypes.DEFAULT_TYPE):
         end_str = AUCTION_END.astimezone(WIB).strftime("%Y-%m-%d %H:%M WIB") if AUCTION_END else "TBD"
         status_line = f"Auction is OPEN — closes at {end_str}"
     else:
-        status_line = "Auction has not started yet."
+        start_str = AUCTION_START.astimezone(WIB).strftime("%Y-%m-%d %H:%M WIB") if AUCTION_START else "TBD"
+        status_line = f"Auction has not started yet — opens at {start_str}"
 
     lines = [status_line, ""]
 
