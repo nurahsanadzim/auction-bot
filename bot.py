@@ -9,8 +9,8 @@ from commands.participate import participate
 from commands.withdraw import withdraw
 from commands.list_items import list_items
 from commands.my_auctions import my_auctions
-from commands.bid import bid_handler
-from commands.revoke import revoke_handler
+from commands.bid import bid
+from commands.revoke import revoke
 from commands.winners import winners
 from commands.help import help_command
 from commands.rules import rules
@@ -25,11 +25,10 @@ GROUP_COMMANDS = [
     BotCommand("withdraw",    "Leave and revoke all your bids"),
     BotCommand("list_items",  "View all items and current leading bids"),
     BotCommand("my_auctions", "View your bids and status"),
-    BotCommand("bid",         "Place a bid on an item"),
-    BotCommand("revoke",      "Revoke your bid on an item"),
+    BotCommand("bid",         "Place a bid — /bid <item_id> <amount>"),
+    BotCommand("revoke",      "Revoke your bid — /revoke <item_id>"),
     BotCommand("winners",     "Show final winners (after auction ends)"),
     BotCommand("rules",       "Show auction rules"),
-    BotCommand("cancel",      "Cancel the current action"),
     BotCommand("help",        "List all commands"),
 ]
 
@@ -47,8 +46,8 @@ def main():
     app.add_handler(CommandHandler("withdraw", withdraw))
     app.add_handler(CommandHandler("list_items", list_items))
     app.add_handler(CommandHandler("my_auctions", my_auctions))
-    app.add_handler(bid_handler)
-    app.add_handler(revoke_handler)
+    app.add_handler(CommandHandler("bid", bid))
+    app.add_handler(CommandHandler("revoke", revoke))
     app.add_handler(CommandHandler("winners", winners))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("rules", rules))
