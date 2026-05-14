@@ -35,6 +35,10 @@ async def bid(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Amount must be a number.")
         return
 
+    if amount % 20000 != 0:
+        await update.message.reply_text("Bid amount must be a multiple of Rp20.000 (e.g. 20.000, 40.000, 200.000).")
+        return
+
     item = get_item(item_id)
     if not item:
         await update.message.reply_text("Item ID not found.")
