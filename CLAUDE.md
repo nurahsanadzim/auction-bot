@@ -42,7 +42,7 @@ Seed/sample data for local testing should live in `data/` only — never commit 
 
 ```
 auction-bot/
-├── bot.py                  # Entry point, registers handlers
+├── bot.py                  # Entry point, registers handlers, sets Telegram command list
 ├── backup.sh               # Daily backup script — tarballs CSVs and sends to Telegram
 ├── commands/
 │   ├── participate.py
@@ -52,6 +52,7 @@ auction-bot/
 │   ├── bid.py
 │   ├── revoke.py
 │   ├── winners.py
+│   ├── rules.py
 │   └── help.py
 ├── data/                   # ⚠ gitignored — local only
 │   ├── users.csv           # Registered participants
@@ -67,6 +68,8 @@ auction-bot/
 ├── .env.example            # committed — template with empty values
 ├── .gitignore
 ├── requirements.txt
+├── README.md               # English documentation
+├── README.id.md            # Indonesian documentation
 └── CLAUDE.md
 ```
 
@@ -89,7 +92,7 @@ auction-bot/
 |---------------|------|------------------------------|
 | id            | str  | e.g. `1`, `2`, `3`          |
 | name          | str  |                              |
-| starting_price| int  | IDR, no decimals             |
+| starting_price| int  | IDR, no decimals — must be a multiple of 20000 |
 | detail        | str  |                              |
 | link          | str  | Online shop URL              |
 | active        | bool | Admin flag — exclude from auction if False |
@@ -101,7 +104,7 @@ auction-bot/
 | bid_id      | str      | UUID               |
 | item_id     | str      | FK → items.csv     |
 | telegram_id | int      | FK → users.csv     |
-| amount      | int      | IDR, no decimals   |
+| amount      | int      | IDR, no decimals — always a multiple of 20000 |
 | timestamp   | datetime | ISO 8601           |
 | revoked     | bool     | Default False      |
 
@@ -139,6 +142,7 @@ auction-bot/
 
 - Only works when auction window is open (`AUCTION_START` ≤ now ≤ `AUCTION_END`)
 - Validates: user registered and active, item exists and active, amount > current leading bid, amount ≥ starting_price
+- **Amount must be a multiple of Rp20.000** — rejected otherwise
 - Appends new row to `bids.csv` — full history preserved, old bids not removed
 
 ### `/revoke <item_id>`
@@ -150,6 +154,11 @@ auction-bot/
 
 - Only available after `AUCTION_END`
 - Runs `resolve_at_close` and displays final winner per item
+
+### `/rules`
+
+- Replies with an inline button linking to the Indonesian README (`README.id.md#cara-kerjanya`)
+- Works in group and DM
 
 ### `/help`
 
@@ -171,6 +180,10 @@ AUCTION_END=2026-05-20T23:59:59+07:00
 - Before `AUCTION_START`: bidding not open
 - Between `AUCTION_START` and `AUCTION_END`: bidding open
 - After `AUCTION_END`: bidding closed, `/winners` unlocked
+
+### Bid Increment Rule
+
+All bid amounts must be a **multiple of Rp20.000**. Validated in `/bid` before any other checks. Starting prices in `items.csv` should also follow this constraint (admin responsibility).
 
 ### During Auction — Leading Bid
 
@@ -234,6 +247,17 @@ Copy to `.env` and fill in values before running. Never commit `.env`.
 
 ---
 
+## Telegram Command Registration
+
+`bot.py` calls `set_my_commands` on startup via `post_init` hook, scoped to `all_group_chats`. This populates the `/` command menu in Telegram automatically every time the bot starts.
+
+```python
+async def post_init(app: Application) -> None:
+    await app.bot.set_my_commands(GROUP_COMMANDS, scope=BotCommandScopeAllGroupChats())
+```
+
+---
+
 ## Backup (`backup.sh`)
 
 A bash script that:
@@ -259,8 +283,8 @@ Cron entry (23:50 WIB — adjust hour for server timezone):
 
 ## Access Control Rules
 
-1. All commands except `/participate` and `/help` require `active = True` in `users.csv`
-2. All commands must be sent from `GROUP_ID`, except `/my_auctions` which also works in DM
+1. All commands except `/participate`, `/rules`, and `/help` require `active = True` in `users.csv`
+2. All commands must be sent from `GROUP_ID`, except `/my_auctions` and `/rules` which also work in DM
 3. `/list_items` shows leading bid username but not `telegram_id`
 4. `/my_auctions` filters bids by `telegram_id` — no cross-user data exposure
 
@@ -272,6 +296,7 @@ Cron entry (23:50 WIB — adjust hour for server timezone):
 |----------------------------|--------------------------------------------------------|
 | User not registered        | `"You're not a participant. Use /participate first."`  |
 | Item not found             | `"Item ID not found."`                                 |
+| Bid not a multiple of 20000| `"Bid amount must be a multiple of Rp20.000"`          |
 | Bid too low                | `"Bid must be higher than current leading: RpX by @Y"` |
 | Already revoked            | `"You have no active bid on this item."`               |
 | Auction not open           | `"Auction is not currently open for bidding."`         |
@@ -306,6 +331,12 @@ EnvironmentFile=/home/deploy/auction-bot/.env
 
 [Install]
 WantedBy=multi-user.target
+```
+
+Allow `deploy` user to restart the service without a password:
+```bash
+sudo visudo -f /etc/sudoers.d/auction-bot
+# Add: deploy ALL=(ALL) NOPASSWD: /bin/systemctl restart auction-bot
 ```
 
 ### Updating after a push
@@ -354,7 +385,8 @@ id,name,starting_price,detail,link,active
 1,Monitor,200000,Good condition,https://tokopedia.com/...,TRUE
 ```
 
-Boolean values (`TRUE`/`FALSE`, `True`/`False`, `true`/`false`) are all accepted.
+- Boolean values (`TRUE`/`FALSE`, `True`/`False`, `true`/`false`) are all accepted
+- `starting_price` must be a multiple of 20000
 
 ---
 

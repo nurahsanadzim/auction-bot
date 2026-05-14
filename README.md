@@ -22,7 +22,7 @@ python bot.py
 BOT_TOKEN=your_telegram_bot_token
 GROUP_ID=your_group_chat_id
 AUCTION_START=2026-05-08T00:00:00+07:00
-AUCTION_END=2026-05-15T23:59:59+07:00
+AUCTION_END=2026-05-20T23:59:59+07:00
 BACKUP_GROUP_ID=your_backup_group_chat_id
 ```
 
@@ -39,6 +39,7 @@ BACKUP_GROUP_ID=your_backup_group_chat_id
 | `/bid <item_id> <amount>` | Place a bid on an item |
 | `/revoke <item_id>` | Revoke your bid on an item |
 | `/winners` | Show final winners (after auction ends) |
+| `/rules` | Show auction rules |
 | `/help` | List all commands |
 
 ---
@@ -59,6 +60,7 @@ BACKUP_GROUP_ID=your_backup_group_chat_id
 
 - Each user can win **at most one item**
 - The 1-win constraint is enforced **only at close** — you can freely bid on multiple items during the auction
+- All bid amounts must be a **multiple of Rp20.000** (e.g. Rp200.000, Rp220.000, Rp240.000)
 - Winner per item = highest non-revoked bidder who hasn't already won another item
 - Tie-break: the bid placed earliest wins
 - Items are assigned priority by highest bid value (most expensive item resolved first)
@@ -78,27 +80,27 @@ BACKUP_GROUP_ID=your_backup_group_chat_id
 
 **alice** bids on item 1:
 ```
-/bid 1 210000
-→ Bid placed: Rp210.000 on [1] Monitor
+/bid 1 200000
+→ Bid placed: Rp200.000 on [1] Monitor
 ```
 
 **bob** outbids alice on item 1:
 ```
-/bid 1 250000
-→ Bid placed: Rp250.000 on [1] Monitor
+/bid 1 220000
+→ Bid placed: Rp220.000 on [1] Monitor
 ```
 
 **alice** checks her status:
 ```
 /my_auctions
 → [1] Monitor
-     Your bid: Rp210.000 — not leading (leading: Rp250.000)
+     Your bid: Rp200.000 — not leading (leading: Rp220.000)
 ```
 
 **alice** moves to item 2 instead:
 ```
-/bid 2 210000
-→ Bid placed: Rp210.000 on [2] Meja
+/bid 2 200000
+→ Bid placed: Rp200.000 on [2] Meja
 ```
 
 **bob** also bids on item 2:
@@ -107,13 +109,13 @@ BACKUP_GROUP_ID=your_backup_group_chat_id
 → Bid placed: Rp220.000 on [2] Meja
 ```
 
-**charlie** bids on item 2 and item 3:
+**charlie** outbids everyone on item 2 and bids on item 3:
 ```
-/bid 2 230000
-→ Bid placed: Rp230.000 on [2] Meja
+/bid 2 240000
+→ Bid placed: Rp240.000 on [2] Meja
 
-/bid 3 210000
-→ Bid placed: Rp210.000 on [3] Gitar
+/bid 3 200000
+→ Bid placed: Rp200.000 on [3] Gitar
 ```
 
 ### `/list_items` mid-auction
@@ -123,16 +125,16 @@ Auction is OPEN — closes at 2026-05-20 23:59 WIB
 
 [1] Monitor
   Starting price: Rp200.000
-  Leading: Rp250.000 by @bob
+  Leading: Rp220.000 by @bob
 
 [2] Meja
   Starting price: Rp200.000
-  Leading: Rp230.000 by @charlie
-  Bid history: Rp230.000, Rp220.000, Rp210.000
+  Leading: Rp240.000 by @charlie
+  Bid history: Rp240.000, Rp220.000, Rp200.000
 
 [3] Gitar
   Starting price: Rp200.000
-  Leading: Rp210.000 by @charlie
+  Leading: Rp200.000 by @charlie
 ```
 
 ### After auction ends — `/winners`
@@ -141,16 +143,16 @@ Resolution pass (items sorted by highest bid, most valuable first):
 
 | Item | Top bids in order | Result |
 |------|-------------------|--------|
-| 1 Monitor (Rp250.000) | bob → assigned | **bob wins Monitor** |
-| 2 Meja (Rp230.000) | charlie → assigned | **charlie wins Meja** |
-| 3 Gitar (Rp210.000) | charlie → already won → no more bidders | **no winner** |
+| 2 Meja (Rp240.000) | charlie → assigned | **charlie wins Meja** |
+| 1 Monitor (Rp220.000) | bob → assigned | **bob wins Monitor** |
+| 3 Gitar (Rp200.000) | charlie → already won → no more bidders | **no winner** |
 
 ```
 /winners
 → Auction Winners:
 
-[1] Monitor → @bob     — Rp250.000
-[2] Meja    → @charlie — Rp230.000
+[1] Monitor → @bob     — Rp220.000
+[2] Meja    → @charlie — Rp240.000
 [3] Gitar   → No winner
 ```
 
@@ -167,7 +169,8 @@ id,name,starting_price,detail,link,active
 3,Gitar,200000,Brand new,https://tokopedia.com/...,TRUE
 ```
 
-Set `active=FALSE` to hide an item from the auction without deleting it.
+- Set `active=FALSE` to hide an item from the auction without deleting it
+- `starting_price` must be a multiple of 20000
 
 ---
 
