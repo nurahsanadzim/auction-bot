@@ -1,5 +1,6 @@
 import logging
 
+from telegram import BotCommand, BotCommandScopeAllGroupChats
 from telegram.ext import Application, CommandHandler
 
 from config import BOT_TOKEN
@@ -20,10 +21,27 @@ logging.basicConfig(
 )
 
 
+GROUP_COMMANDS = [
+    BotCommand("participate", "Join the auction"),
+    BotCommand("withdraw",    "Leave and revoke all your bids"),
+    BotCommand("list_items",  "View all items and current leading bids"),
+    BotCommand("my_auctions", "View your bids and status"),
+    BotCommand("bid",         "Place a bid — /bid <item_id> <amount>"),
+    BotCommand("revoke",      "Revoke your bid — /revoke <item_id>"),
+    BotCommand("winners",     "Show final winners (after auction ends)"),
+    BotCommand("rules",       "Show auction rules"),
+    BotCommand("help",        "List all commands"),
+]
+
+
+async def post_init(app: Application) -> None:
+    await app.bot.set_my_commands(GROUP_COMMANDS, scope=BotCommandScopeAllGroupChats())
+
+
 def main():
     init_data_dir()
 
-    app = Application.builder().token(BOT_TOKEN).build()
+    app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
 
     app.add_handler(CommandHandler("participate", participate))
     app.add_handler(CommandHandler("withdraw", withdraw))
