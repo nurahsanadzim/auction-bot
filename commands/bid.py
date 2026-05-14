@@ -93,8 +93,11 @@ async def bid_receive_amount(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 async def bid_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    context.user_data.pop("bid_item", None)
-    await update.message.reply_text("Bid cancelled.")
+    item_id = context.user_data.pop("bid_item", None)
+    if item_id:
+        await update.message.reply_text(f"Bid cancelled. You were in the middle of bidding on item [{item_id}].")
+    else:
+        await update.message.reply_text("Bid cancelled. You were selecting an item to bid on.")
     return ConversationHandler.END
 
 

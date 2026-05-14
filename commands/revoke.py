@@ -56,7 +56,7 @@ async def revoke_receive_item(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def revoke_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.message.reply_text("Revoke cancelled.")
+    await update.message.reply_text("Revoke cancelled. You were selecting an item to revoke your bid on.")
     return ConversationHandler.END
 
 
