@@ -11,8 +11,16 @@ load_dotenv()
 
 DATA_DIR = Path(__file__).parent / "data"
 USERS_CSV = DATA_DIR / "users.csv"
+ITEMS_CSV = DATA_DIR / "items.csv"
 BIDS_CSV  = DATA_DIR / "bids.csv"
 SPREADSHEET_ID = "15XA1Le7H-4FYgOa4VKxJjS23FMQqRnDQ2LI-MAgUZJA"
+
+
+def _load_item_map() -> dict[str, str]:
+    if not ITEMS_CSV.exists():
+        return {}
+    with open(ITEMS_CSV, newline="") as f:
+        return {r["id"]: r["name"] for r in csv.DictReader(f)}
 
 
 def _load_username_map() -> dict[int, str]:
@@ -38,6 +46,7 @@ def main():
 
     ws = gc.open_by_key(SPREADSHEET_ID).sheet1
 
+    item_map    = _load_item_map()
     username_map = _load_username_map()
     headers, rows = _load_bids()
 
@@ -45,7 +54,14 @@ def main():
         print("No bids data found.")
         return
 
-    out_headers = [("username" if h == "telegram_id" else h) for h in headers]
+    out_headers = []
+    for h in headers:
+        if h == "telegram_id":
+            out_headers.append("username")
+        elif h == "item_id":
+            out_headers.append("item_name")
+        else:
+            out_headers.append(h)
     data = [out_headers]
 
     for row in rows:
@@ -54,6 +70,8 @@ def main():
             if col == "telegram_id":
                 tid = int(row[col])
                 out_row.append(username_map.get(tid, str(tid)))
+            elif col == "item_id":
+                out_row.append(item_map.get(row[col], row[col]))
             else:
                 out_row.append(row[col])
         data.append(out_row)
