@@ -30,14 +30,12 @@ async def revoke(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     bids = load_bids()
-    active_bid = next(
-        (b for b in bids if b.item_id == item_id and b.telegram_id == user_id and not b.revoked),
-        None,
-    )
-    if not active_bid:
+    user_bids = [b for b in bids if b.item_id == item_id and b.telegram_id == user_id and not b.revoked]
+    if not user_bids:
         await update.message.reply_text("You have no active bid on this item.")
         return
 
-    active_bid.revoked = True
+    for b in user_bids:
+        b.revoked = True
     save_bids(bids)
     await update.message.reply_text(f"Your bid on [{item_id}] {item.name} has been revoked.")
