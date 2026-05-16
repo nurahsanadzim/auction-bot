@@ -2,6 +2,8 @@ import csv
 import json
 import os
 import sys
+import urllib.parse
+import urllib.request
 from pathlib import Path
 
 import gspread
@@ -14,6 +16,12 @@ USERS_CSV = DATA_DIR / "users.csv"
 ITEMS_CSV = DATA_DIR / "items.csv"
 BIDS_CSV  = DATA_DIR / "bids.csv"
 SPREADSHEET_ID = "15XA1Le7H-4FYgOa4VKxJjS23FMQqRnDQ2LI-MAgUZJA"
+
+
+def _notify(token: str, chat_id: str, text: str) -> None:
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = urllib.parse.urlencode({"chat_id": chat_id, "text": text}).encode()
+    urllib.request.urlopen(url, data=payload, timeout=10)
 
 
 def _load_item_map() -> dict[str, str]:
@@ -78,7 +86,14 @@ def main():
 
     ws.clear()
     ws.update("A1", data)
-    print(f"Synced {len(rows)} bids to spreadsheet.")
+
+    msg = f"Synced {len(rows)} bids to spreadsheet."
+    print(msg)
+
+    token   = os.environ.get("BOT_TOKEN", "")
+    chat_id = os.environ.get("GROUP_ID", "")
+    if token and chat_id:
+        _notify(token, chat_id, f"[Bid Sync] {msg}")
 
 
 if __name__ == "__main__":
